@@ -1,0 +1,193 @@
+package SR_AckTimeout_002;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+
+import ikr.simlib.entities.Entity;
+import ikr.simlib.events.CalendarCallback;
+import ikr.simlib.events.EventToken;
+import ikr.simlib.events.time.Duration;
+import ikr.simlib.messages.LabelMessage;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+import ikr.simlib.events.calendar.Calendar;
+
+
+public class Sender extends Entity {
+
+	private final InputPort In;
+	private final SynchronousOutputPort Out;
+	private final InputPort FeedbackIn;
+	private final List<LabelMessage> windowBuffer;
+	private EventToken timeoutEvent;
+	private final HashMap<Integer, EventToken> map;
+
+	public Sender(SimNode ownNode) {
+		super(ownNode);
+
+		this.windowBuffer = new ArrayList<>(4);
+		this.map = new HashMap<Integer, EventToken>();
+
+
+		this.Out = new SynchronousOutputPort(this);
+
+		this.In = new InputPort(this) {
+			@Override
+			protected void handleMessageIndication(Message msg) {
+				CalendarCallback onExecute = new CalendarCallback() {
+					@Override
+					public void execute() {
+ 						bufferAndSendMessages();
+					}
+				};
+				
+				if (windowBuffer.size() < 4) {   // check if window is full
+					System.out.println("**********Transmision Start************");
+					System.out.println(String.format("%.3f" , Calendar.getInstance().getSystemTime().toMilliSeconds()));
+					Calendar.getInstance().postEvent(onExecute, null,
+							Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(0.1)));
+
+				}
+			}
+		};
+
+		this.FeedbackIn = new InputPort(this) {
+			@Override
+			protected void handleMessageIndication(Message msg) {
+				LabelMessage AckMsg = (LabelMessage) FeedbackIn.getMessage();
+				int id = AckMsg.getLabel();
+
+				if (((AckMessage) msg).isAck()) {
+					if (timeoutEvent.isPending()){   // timeout has not reached
+						ackMessages(id);
+					}
+					if (windowBuffer.size()<4){
+						CalendarCallback onExecute = new CalendarCallback() {
+							@Override
+							public void execute() {
+								bufferAndSendMessages();
+							}
+
+						};
+
+						if (windowBuffer.size() < 4) {
+							Calendar.getInstance().postEvent(onExecute, null,
+									Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(1.0)));
+
+						}
+					}
+				}
+			}
+		};   
+
+	}
+
+
+	public void bufferAndSendMessages() {
+		while (windowBuffer.size() <= 4) {
+			if (In.isMessageAvailable()) {
+				LabelMessage message = (LabelMessage) In.getMessage();
+				windowBuffer.add(message);
+				this.map.put(message.getLabel(), startTimer(message.getLabel()));
+				Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
+				System.out.println(String.format("%.3f", time)
+						+ "ms, Send & buffered message "
+						+ String.valueOf(message.getLabel())
+						+ "; Window Size: "
+						+ String.valueOf(windowBuffer.size())
+						+ "; Event Map Size: "
+						+ String.valueOf(this.map.size()));
+				Out.sendMessage(message);
+			} else {
+				break;
+			}
+		}
+	}
+
+
+
+	public void ackMessages(int id) {
+		EventToken event = (EventToken) this.map.get(id);
+		this.map.remove(id);
+		event.cancel(); 
+		Iterator<LabelMessage> it = windowBuffer.iterator();
+		while (it.hasNext()) {
+			LabelMessage nextMessage = it.next();
+			if (nextMessage.getLabel() == (id-1)) {
+				it.remove();
+				Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
+				System.out.println(String.format("%.3f", time)
+						+ "ms, Message Acked and removed from Window: "
+						+ String.valueOf(nextMessage.getLabel())
+						+ "; Window Size: "
+						+ String.valueOf(windowBuffer.size())
+						+ "; Event Map Size: "
+						+ String.valueOf(this.map.size()));
+				System.out.println("*******Acked***********");
+			}
+		}
+	}
+
+
+
+	public void timeOutAction(int retransmitID) {
+		System.out.println("*************Retransmission*************");
+		Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
+		for (Iterator<LabelMessage> it = windowBuffer.iterator(); it.hasNext();) {
+			LabelMessage message = it.next();
+			if (message.getLabel() == retransmitID) {
+				Out.sendMessage(message);
+				this.map.put(message.getLabel(), startTimer(retransmitID));
+				System.out.println(String.format("%.3f", time)
+						+ "ms, Retransmit message "
+						+ String.valueOf(retransmitID)+ "; Event Map Size: "
+						+ String.valueOf(this.map.size()));
+			}
+		}
+	}
+
+
+	public EventToken startTimer(int id){
+		CalendarCallback onExecute = new CalendarCallback(){
+			private int id;
+			@Override
+			public void execute() {
+				timeOutAction(id);
+			}
+
+			private CalendarCallback init(int i) {
+				id = i;
+				return this;
+			}
+		}.init(id);
+
+		return this.timeoutEvent = Calendar.getInstance().postEvent(
+				onExecute,
+				null,
+				Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(1.5)));
+
+	}
+
+
+
+	public InputPort getInput() {
+		return this.In;
+	}
+
+
+	public InputPort getFeedbackInput(){
+		return this.FeedbackIn;
+	}
+
+
+	public OutputPort getOutput() {
+		return this.Out;
+	}
+
+}

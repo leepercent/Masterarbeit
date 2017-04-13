@@ -1,0 +1,28 @@
+# the number of calls per batch
+FeedbackModel.TransientPhaseTime = 500
+FeedbackModel.BatchTime = 1000
+
+
+# use the new parser concept to create a StdGenerator
+#FeedbackModel.Generator = ikr.simlib.entities.generators.StdGenerator
+FeedbackModel.Generator.IAT = 0.1
+#FeedbackModel.Generator.IATDist = ikr.simlib.distributions.continuous.NegExpDistribution
+FeedbackModel.Generator.IATDist.Mean = 1
+#FeedbackModel.Generator.IATDist.Mean = %%IAT%%
+FeedbackModel.Generator.msgLength = 1
+FeedbackModel.Generator.LengthDist = ikr.simlib.distributions.discrete.DiscreteConstantDistribution
+FeedbackModel.Generator.LengthDist.Mean = 1
+#FeedbackModel.Generator.LengthDist.Mean = %%MsgLen%%
+
+
+# properties of the node
+FeedbackModel.Node.Phase.ServiceTimeDist = ikr.simlib.distributions.continuous.NegExpDistribution
+FeedbackModel.Node.Phase.ServiceTimeDist.Mean = 10
+FeedbackModel.Node.FeedbackProbability = 0.01
+
+# set the delay of all links to 10
+FeedbackModel.Link*.Delay = ikr.simlib.events.time.Duration
+FeedbackModel.Link*.Delay.Seconds = 10
+
+#set the IAT
+AckNackModel.Generator.IAT = 0.01

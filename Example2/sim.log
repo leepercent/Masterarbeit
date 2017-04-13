@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<SimulationResults version="2" seed_index="0" result_type="final" number_of_batches="10" rounding_precision="6">
+ <Node name="FeedbackModel">
+  <Node name="Link1">
+   <Node name="DelayServer">
+    <Node type="StdIntegralStatistic" name="Occupancy">
+     <Result type="double" name="mean" value="100.213"/>
+     <Result type="double" name="cint" value="0.515091"/>
+     <Result type="double" name="min" value="64"/>
+     <Result type="double" name="max" value="139"/>
+    </Node>
+   </Node>
+  </Node>
+  <Node name="Node">
+   <Node name="Queue">
+    <Node name="UnboundedFIFOQDisc">
+     <Node type="StdSampleStatistic" name="WaitingTime">
+      <Result type="string" name="unit" value="s"/>
+      <Result type="double" name="mean" value="NaN"/>
+      <Result type="double" name="cintmean" value="NaN"/>
+      <Result type="double" name="deviation" value="NaN"/>
+      <Result type="double" name="cintdeviation" value="NaN"/>
+      <Result type="double" name="cov" value="NaN"/>
+      <Result type="double" name="cintcov" value="NaN"/>
+      <Result type="double" name="max" value="NaN"/>
+      <Result type="double" name="min" value="NaN"/>
+      <Result type="longinteger" name="numberofevents" value="0"/>
+     </Node>
+     <Node type="StdSampleStatistic" name="TransferTime">
+      <Result type="string" name="unit" value="s"/>
+      <Result type="double" name="mean" value="0"/>
+      <Result type="double" name="cintmean" value="0"/>
+      <Result type="double" name="deviation" value="0"/>
+      <Result type="double" name="cintdeviation" value="0"/>
+      <Result type="double" name="cov" value="0"/>
+      <Result type="double" name="cintcov" value="0"/>
+      <Result type="double" name="max" value="0"/>
+      <Result type="double" name="min" value="0"/>
+      <Result type="longinteger" name="numberofevents" value="101220"/>
+     </Node>
+     <Node type="StdIntegralStatistic" name="NumberOfMessages">
+      <Result type="double" name="mean" value="0"/>
+      <Result type="double" name="cint" value="0"/>
+      <Result type="double" name="min" value="0"/>
+      <Result type="double" name="max" value="1"/>
+     </Node>
+     <Node type="StdIntegralStatistic" name="NumberOfUnits">
+      <Result type="double" name="mean" value="0"/>
+      <Result type="double" name="cint" value="0"/>
+      <Result type="double" name="min" value="0"/>
+      <Result type="double" name="max" value="1"/>
+     </Node>
+     <Node type="StdProbabilityStatistic" name="LossProbability">
+      <Result type="double" name="mean" value="0"/>
+      <Result type="double" name="cint" value="0"/>
+     </Node>
+    </Node>
+   </Node>
+   <Node name="Phase">
+    <Node type="StdIntegralStatistic" name="Occupancy">
+     <Result type="double" name="mean" value="100.955"/>
+     <Result type="double" name="cint" value="1.03947"/>
+     <Result type="double" name="min" value="66"/>
+     <Result type="double" name="max" value="143"/>
+    </Node>
+   </Node>
+  </Node>
+  <Node name="Link2">
+   <Node name="DelayServer">
+    <Node type="StdIntegralStatistic" name="Occupancy">
+     <Result type="double" name="mean" value="100.195"/>
+     <Result type="double" name="cint" value="0.571282"/>
+     <Result type="double" name="min" value="65"/>
+     <Result type="double" name="max" value="146"/>
+    </Node>
+   </Node>
+  </Node>
+  <Node type="StdSampleStatistic" name="TransmissionTimeMeter">
+   <Result type="double" name="mean" value="30.0727"/>
+   <Result type="double" name="cintmean" value="0.0828454"/>
+   <Result type="double" name="deviation" value="10.0403"/>
+   <Result type="double" name="cintdeviation" value="0.0723365"/>
+   <Result type="double" name="cov" value="0.333864"/>
+   <Result type="double" name="cintcov" value="0.00180938"/>
+   <Result type="double" name="max" value="138.446"/>
+   <Result type="double" name="min" value="20.0003"/>
+   <Result type="longinteger" name="numberofevents" value="100195"/>
+  </Node>
+  <Node type="StdDistributionStatistic" name="TransmissionTimeDistribution">
+   <Result type="double" name="uprob" value="0"/>
+   <Array name="pdf">
+    <ArrayItem index="0">
+     <Result type="double" name="ubound" value="0"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="1">
+     <Result type="double" name="ubound" value="1"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="2">
+     <Result type="double" name="ubound" value="2"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="3">
+     <Result type="double" name="ubound" value="3"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="4">
+     <Result type="double" name="ubound" value="4"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="5">
+     <Result type="double" name="ubound" value="5"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="6">
+     <Result type="double" name="ubound" value="6"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="7">
+     <Result type="double" name="ubound" value="7"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="8">
+     <Result type="double" name="ubound" value="8"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="9">
+     <Result type="double" name="ubound" value="9"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+    <ArrayItem index="10">
+     <Result type="double" name="ubound" value="10"/>
+     <Result type="double" name="prob" value="0"/>
+     <Result type="double" name="cintprob" value="0"/>
+     <Result type="double" name="dist" value="0"/>
+     <Result type="double" name="cintdist" value="0"/>
+     <Result type="double" name="cdist" value="1"/>
+    </ArrayItem>
+   </Array>
+  </Node>
+ </Node>
+</SimulationResults>
