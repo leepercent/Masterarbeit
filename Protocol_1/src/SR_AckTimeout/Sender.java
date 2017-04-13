@@ -64,7 +64,8 @@ public class Sender extends Entity {
 
 				if (((AckMessage) AckMsg).isAck()) {
 					if (timeoutEvent.isPending()){   // timeout has not reached
-						if (id>lastUnackedMsgID){   // duplicated ack detection
+						System.out.println(String.valueOf(lastUnackedMsgID)+"  ack arrived");
+						if (id>lastUnackedMsgID || id == 0){   // duplicated ack detection
 							ackMessages(id);
 						}else{
 							System.out.println(String.format("%.3f", Calendar.getInstance().getSystemTime().toMilliSeconds())
@@ -124,16 +125,7 @@ public class Sender extends Entity {
 		EventToken event = (EventToken) this.map.get(id-1);
 		this.map.remove(id-1);
 		event.cancel(); 
-		
-		// get last unacked event
-		for (Map.Entry<Integer, EventToken> entry: map.entrySet()){
-			if (lastUnackedMsg ==null || lastUnackedMsg.getKey() > entry.getKey()){
-				lastUnackedMsg = entry;
-				lastUnackedMsgID = entry.getKey();
-				System.out.println(lastSentMsgID);
-			}
-		}
-		
+
 		// remove message from send window
 		Iterator<LabelMessage> it = sendWindow.iterator();
 		while (it.hasNext()) {
@@ -151,9 +143,20 @@ public class Sender extends Entity {
 				System.out.println("*******Acked***********");
 			}
 		}
+		
+		// get last unacked event
+		for (Map.Entry<Integer, EventToken> entry: map.entrySet()){
+			System.out.println(entry.getKey());
+			if (lastUnackedMsg ==null || lastUnackedMsg.getKey() < entry.getKey()){
+				lastUnackedMsg = entry;
+				lastUnackedMsgID = entry.getKey();
+				System.out.println(String.valueOf(lastSentMsgID)+"  ack updated");
+			}
+		}
 	}
 
 
+	
 	public void timeOutAction(int retransmitID) {
 		System.out.println("*************Retransmission*************");
 		Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
@@ -181,7 +184,6 @@ public class Sender extends Entity {
 
 	}
 
-//bullshit
 
 	public InputPort getInput() {
 		return this.In;
