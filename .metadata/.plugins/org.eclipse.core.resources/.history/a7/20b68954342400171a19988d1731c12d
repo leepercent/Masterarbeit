@@ -1,0 +1,70 @@
+package SR_AckTimeout;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import ikr.simlib.entities.Entity;
+import ikr.simlib.messages.LabelMessage;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+import ikr.simlib.random.StdRandomNumberGenerator;
+
+public class Receiver extends Entity{
+  
+  private final InputPort in;
+  private final SynchronousOutputPort sinkOut;
+  private final SynchronousOutputPort out;
+  private int id;
+  private LabelMessage m;
+  private final List<Integer> ackedMessages;
+  private final int windowSize;
+
+  public Receiver(SimNode ownNode, final double dropPrbability) {
+    super(ownNode);
+
+    this.sinkOut = new SynchronousOutputPort(this);
+    this.out = new SynchronousOutputPort(this); 
+    
+    this.ackedMessages = new ArrayList<Integer>();
+
+    final StdRandomNumberGenerator r = new StdRandomNumberGenerator();
+
+    this.in = new InputPort(this) {
+    	@Override
+    	protected void handleMessageIndication(Message msg) {
+    		m = (LabelMessage) in.getMessage();
+    		id = m.getLabel(); 
+
+    		if(r.next() < 1-dropPrbability) {
+    			out.sendMessage(new AckMessage(true, id+1));
+    			if(!ackedMessages.contains(id)){
+    				sinkOut.sendMessage(m);
+    				if (ackedMessages.size()<4){
+    					ackedMessages.add(id);
+    				}else{
+    					ackedMessages.remove(0);
+    					ackedMessages.add(ackedMessages.size(), id);
+    				}
+    			}
+    		}
+    	}
+    };
+  }
+
+  
+  public InputPort getInput() {
+	  return this.in;
+  }
+  
+  public OutputPort getOutputSink() {
+	  return this.sinkOut;
+  }
+  
+  public OutputPort getOutput(){
+	  return this.out;
+  }
+}

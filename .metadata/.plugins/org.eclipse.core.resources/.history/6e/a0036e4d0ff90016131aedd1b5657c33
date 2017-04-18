@@ -1,0 +1,75 @@
+package protocol;
+
+import ikr.simlib.entities.Entity;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Sender extends Entity {
+
+  private final InputPort generatorInput;
+  private final SynchronousOutputPort out;
+  private final InputPort FeedbackIn;
+
+  private boolean waitForFeedback = false;
+  private Message message;
+  private final List<Message> buffer;
+
+  public Sender(SimNode ownNode) {
+    super(ownNode);
+    this.buffer = new ArrayList<>();
+    this.out = new SynchronousOutputPort(this);
+    this.generatorInput = new InputPort(this) {
+      @Override
+      protected void handleMessageIndication(Message msg) {
+        if (!waitForFeedback) {
+          if (buffer.isEmpty()){
+        	  message = generatorInput.getMessage();
+        	  out.sendMessage(message);
+          }else{
+        	  message = buffer.get(0);
+        	  out.sendMessage(buffer.remove(0));
+          }
+        } else {
+          buffer.add(getMessage());
+        }
+      }
+    };
+
+    this.FeedbackIn = new InputPort(this) {
+      @Override
+      protected void handleMessageIndication(Message msg) {
+    	msg = FeedbackIn.getMessage();
+        if (((AckNackMessage) msg).isAck()) {
+          //check buffer
+          if (!buffer.isEmpty()){
+        	  out.sendMessage(buffer.remove(0));
+          }
+        } else {     	
+        	out.sendMessage(message); //store the old message, from the buffer or from the port
+        }
+      }
+    };
+  }
+  
+  public InputPort getInput() {
+	  return this.generatorInput;
+  }
+  
+  public OutputPort getOutput() {
+	  return this.out;
+  }
+  
+
+//  private void sendNewMessage() {
+//    this.message = generatorInput.getMessage();
+//    this.out.sendMessage(message);
+//    waitForFeedback = true;
+//  }
+
+}

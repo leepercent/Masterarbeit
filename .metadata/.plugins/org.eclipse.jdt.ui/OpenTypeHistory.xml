@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<typeInfoHistroy>
+<typeInfo handle="=Example2/\/net\/arch\/ikr\/simlib-java\/ikr-simlib-4.0.0.jar&lt;ikr.simlib.entities.phases(InfiniteServer.class[InfiniteServer" modifiers="1057" timestamp="1460119383000"/>
+<typeInfo handle="=Protocol_1/\/net\/arch\/ikr\/simlib-java\/ikr-simlib-4.0.0.jar&lt;ikr.simlib.messages.factories(LabelMessageFactory.class[LabelMessageFactory" modifiers="33" timestamp="1460119383000"/>
+<typeInfo handle="=Example2/\/net\/arch\/ikr\/simlib-java\/ikr-simlib-4.0.0.jar&lt;ikr.simlib.events.calendar(OrderedTreeSetCalendar.class[OrderedTreeSetCalendar" modifiers="33" timestamp="1460119383000"/>
+<typeInfo handle="=Example2/\/net\/arch\/ikr\/simlib-java\/ikr-simlib-4.0.0.jar&lt;ikr.simlib.entities.phases(Phase.class[Phase" modifiers="1057" timestamp="1460119383000"/>
+<typeInfo handle="=Example2/\/net\/arch\/ikr\/simlib-java\/ikr-simlib-4.0.0.jar&lt;ikr.simlib.entities.phases(DInfiniteServer.class[DInfiniteServer" modifiers="33" timestamp="1460119383000"/>
+</typeInfoHistroy>

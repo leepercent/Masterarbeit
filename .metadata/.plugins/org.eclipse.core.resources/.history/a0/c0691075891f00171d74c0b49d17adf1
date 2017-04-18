@@ -1,0 +1,143 @@
+package SW_AckTimeout;
+
+import java.util.List;
+
+import ikr.simlib.distributions.continuous.ConstantDistribution;
+import ikr.simlib.entities.Entity;
+import ikr.simlib.entities.phases.StdPhase;
+import ikr.simlib.events.CalendarCallback;
+import ikr.simlib.events.EventToken;
+import ikr.simlib.events.time.Duration;
+import ikr.simlib.events.time.PointInTime;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+import ikr.simlib.statistics.sample.StdSampleStatistic;
+import ikr.simlib.events.calendar.Calendar;
+
+
+public class Sender extends Entity {
+	
+	private final InputPort In;
+	private final SynchronousOutputPort Out;
+	private final InputPort FeedbackIn;
+	private Message message;
+	private EventToken timeoutEvent;
+	private final StdSampleStatistic statistic;
+	private PointInTime startTime;
+	private PointInTime finishTime;
+	private boolean messageFull;
+	
+  public Sender(SimNode ownNode) {
+    super(ownNode);
+    
+    this.statistic = new StdSampleStatistic(ownNode.createChildNode("ServiceTime"));
+    this.messageFull = false;
+    this.Out = new SynchronousOutputPort(this);
+
+    this.In = new InputPort(this) {
+    	@Override
+    	protected void handleMessageIndication(Message msg) {
+    		if (isServerNotBusy()){
+    			if (!messageFull) {
+    				message = In.getMessage();
+    				startTime = Calendar.getInstance().getSystemTime();
+    				System.out.println(String.format("%.3f", startTime.toMilliSeconds())+" ms, start send");
+    				Calendar.getInstance().postEvent(new CalendarCallback(){
+    					@Override
+    					public void execute() {
+    						Out.sendMessage(message);
+    						System.out.println(String.format("%.3f", Calendar.getInstance().getSystemTime().toMilliSeconds())+"ms, send message");
+    						startTimer();
+    					}
+    				}, null, startTime.plus(Duration.fromMilliSeconds(0.1)));
+    			} 
+    		}
+    	}
+    };
+
+    this.FeedbackIn = new InputPort(this) {
+    	@Override
+    	protected void handleMessageIndication(Message msg) {
+    		msg = FeedbackIn.getMessage();
+    		if (((AckMessage) msg).isAck()) {
+    			if (timeoutEvent.isPending()){
+    				System.out.println(String.format("%.3f", Calendar.getInstance().getSystemTime().toMilliSeconds())
+    						+"ms, message acked");
+    				timeoutEvent.cancel();   // stop the Timer
+    				message = null;
+    				finishTime = Calendar.getInstance().getSystemTime();
+    				System.out.println(startTime.until(finishTime).toMilliSeconds());
+    				statistic.update(startTime.until(finishTime).toMilliSeconds());
+    				if (In.isMessageAvailable()){
+    					if (isServerNotBusy()) {
+    						if (message != null){
+    							message = In.getMessage();
+    							startTime = Calendar.getInstance().getSystemTime();
+    							System.out.println(String.format("%.3f", startTime.toMilliSeconds())+" ms, start send");
+    							final PointInTime now = Calendar.getInstance().getSystemTime();
+    							Calendar.getInstance().postEvent(new CalendarCallback(){
+    								@Override
+    								public void execute() {
+    									Out.sendMessage(message);
+    									System.out.println(String.format("%.3f", now.toMilliSeconds())+"ms, send message");
+    									startTimer();
+    								}
+    							}, null, now.plus(Duration.fromMilliSeconds(0.1)));
+    						}
+    					}
+    				}
+    			}
+    		}
+    	}
+    };
+
+  }
+  
+  
+  public void timeOutAction(){
+	System.out.println(String.format("%.3f", Calendar.getInstance().getSystemTime().toMilliSeconds())
+			+ "ms, message retransmit");
+	Out.sendMessage(this.message);
+	startTimer();
+  }
+  
+  
+  public void startTimer(){
+		  CalendarCallback onExecute = new CalendarCallback(){
+			  @Override
+			  public void execute() {
+				  timeOutAction();
+			  }
+		  };
+		  
+		  this.timeoutEvent = Calendar.getInstance().postEvent(onExecute, null, Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(1.5)));
+  }
+  
+  
+  private boolean isServerNotBusy(){
+	  if (this.timeoutEvent == null) {
+		  return true;
+	  } else {
+	  return !this.timeoutEvent.isPending();
+	  }
+  }
+  
+  
+  public InputPort getInput() {
+	  return this.In;
+  }
+  
+  
+  public InputPort getFeedbackInput(){
+	  return this.FeedbackIn;
+  }
+  
+  
+  public OutputPort getOutput() {
+	  return this.Out;
+  }
+  
+}

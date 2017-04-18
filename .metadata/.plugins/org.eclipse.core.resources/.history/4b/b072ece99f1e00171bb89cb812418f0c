@@ -1,0 +1,247 @@
+package SR_AckTimeout;
+
+import java.io.BufferedWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.omg.CORBA.PRIVATE_MEMBER;
+import org.omg.CORBA.PUBLIC_MEMBER;
+import org.omg.PortableServer.ID_ASSIGNMENT_POLICY_ID;
+
+import ikr.simlib.distributions.continuous.ConstantDistribution;
+import ikr.simlib.entities.Entity;
+import ikr.simlib.entities.phases.StdPhase;
+import ikr.simlib.events.CalendarCallback;
+import ikr.simlib.events.EventToken;
+import ikr.simlib.events.time.Duration;
+import ikr.simlib.messages.LabelMessage;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+import ikr.simlib.events.calendar.Calendar;
+import ikr.simlib.events.calendar.OrderedTreeSetCalendar;
+
+
+public class Sender extends Entity {
+	
+	private final InputPort In;
+	private final SynchronousOutputPort Out;
+	private final OutputPort OutputPortAfterFrameProc;
+	private final InputPort FeedbackIn;
+	private final List<LabelMessage> windowBuffer;
+	private EventToken timeoutEvent;
+	private final StdPhase frameProcTime;
+	private final Map map;
+//	private final List<Integer> blockedMessagesID;
+	
+  public Sender(SimNode ownNode) {
+	  super(ownNode);
+
+	  this.windowBuffer = new ArrayList<>(4);
+	  this.map = new HashMap();
+//	  this.blockedMessagesID = new ArrayList<>();
+	  
+	  this.frameProcTime = new StdPhase(new ConstantDistribution(0.1e-3), simNode.createChildNode("FrameProcessingTime"));
+
+	  this.Out = new SynchronousOutputPort(this);
+	  this.OutputPortAfterFrameProc = this.frameProcTime.getOutput();
+
+	  this.In = new InputPort(this) {
+		  @Override
+		  protected void handleMessageIndication(Message msg) {
+			  if (windowBuffer.size() < 4){
+				  bufferAndSendMessages();
+			  }
+		  }
+	  };
+
+	  this.FeedbackIn = new InputPort(this) {
+		  @Override
+		  protected void handleMessageIndication(Message msg) {
+			  LabelMessage AckMsg = (LabelMessage) FeedbackIn.getMessage();
+			  int id = AckMsg.getLabel();
+			  
+			  if (((AckMessage) msg).isAck()) {
+				  if (timeoutEvent.isPending()){   // timeout has not reached
+					  ackMessages(id);
+				  }
+				  if (windowBuffer.size()<4){
+					  bufferAndSendMessages();
+				  }
+			  }
+		  }
+	  };   
+
+
+    // connect sender to constant delay
+    this.Out.connect(this.frameProcTime.getInput());
+    
+  }
+
+  public void timeOutAction(int retransmitID) {
+	  System.out.println("*************Retransmission*************");
+	  Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
+	  System.out.println(String.format("%.3f", time)+ "ms, Message "+String.valueOf(retransmitID) +" Timeout");
+	  for (Iterator<LabelMessage> it = windowBuffer.iterator(); it.hasNext();) {
+		  LabelMessage message = it.next();
+		  if (message.getLabel() == retransmitID) {
+			  ((SynchronousOutputPort) this.OutputPortAfterFrameProc).sendMessage(message);
+			  System.out.println(String.format("%.3f", time)
+					  + "ms, Retransmit message Laebl: "
+					  + String.valueOf(retransmitID));
+			  startTimer(retransmitID);
+		  }
+	  }
+  }
+
+  
+  public void startTimer(int id){
+		  CalendarCallback onExecute = new CalendarCallback(){
+			  private int id;
+			  @Override
+			  public void execute() {
+				timeOutAction(id);
+			  }
+
+			private CalendarCallback init(int i) {
+				id = i;
+				return this;
+			}
+		}.init(id);
+		this.timeoutEvent = OrderedTreeSetCalendar.getInstance().postEvent(
+				onExecute,
+				null,
+				Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(1.5)));
+//		  this.timeoutEvent = Calendar.getInstance().postEvent(onExecute, null, Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(1.5)),id);
+		
+
+  
+  }
+  
+  
+  
+  public void bufferAndSendMessages() {
+	  while (windowBuffer.size() <= 4) {
+		  if (In.isMessageAvailable()) {
+			  LabelMessage message = (LabelMessage) In.getMessage();
+			  System.out.println("**********Transmision Start************");
+			  windowBuffer.add(message);
+			  Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
+			  // if (isServerNotBusy()){
+			  Out.sendMessage(message);
+			  System.out.println(String.format("%.3f", time)
+					  + "ms, Send & buffered message: "
+					  + String.valueOf(message.getLabel())
+					  + "; Window Size: "
+					  + String.valueOf(windowBuffer.size()));
+			  startTimer(message.getLabel());
+			  
+			  // }else{
+			  // System.out.println("blocked message: " +
+			  // String.valueOf(message.getLabel()));
+			  // blockedMessagesID.add(message.getLabel());
+			  // }
+		  } else {
+			  break;
+		  }
+	  }
+  }
+
+
+
+
+  public void ackMessages(int id) {
+	  timeoutEvent.cancel();
+	  Iterator<LabelMessage> it = windowBuffer.iterator();
+	  while (it.hasNext()) {
+		  LabelMessage nextMessage = it.next();
+		  if (nextMessage.getLabel() == id) {
+			  it.remove();
+			  Double time = Calendar.getInstance().getSystemTime().toMilliSeconds();
+			  System.out.println(String.format("%.3f", time)
+					  + "ms, Message Acked and removed from Window: "
+					  + String.valueOf(nextMessage.getLabel())
+					  + "; Window Size: "
+					  + String.valueOf(windowBuffer.size()));
+			  System.out.println("*******Acked***********");
+		  }
+	  }
+  }
+  
+  private boolean isServerNotBusy(){
+	  if (this.timeoutEvent == null) {
+		  return true;
+	  } else {
+	  return !this.timeoutEvent.isPending();
+	  }
+  }
+  
+  
+  public InputPort getInput() {
+	  return this.In;
+  }
+  
+  
+  public InputPort getFeedbackInput(){
+	  return this.FeedbackIn;
+  }
+  
+  
+  public OutputPort getOutput() {
+	  return this.Out;
+  }
+  
+  
+  public OutputPort getOutputPortAfterFrameProc(){
+	  return this.OutputPortAfterFrameProc;
+  }
+  
+  
+//			  if (!blockedMessagesID.isEmpty()){
+//				  for(int i=0;i<blockedMessagesID.size();i++){
+//					  sendBlockedMsgs(blockedMessagesID.get(i));
+//				  }
+//			  }
+
+//			  Iterator it = blockedMessagesID.iterator();
+//			  while(it.hasNext()){
+//				  sendBlockedMsgs((int)it.next());
+//			  }
+//			  if (!blockedMessagesID.isEmpty()){
+//				  for (int i : blockedMessagesID){
+//					  System.out.println(i);
+//					  sendBlockedMsgs(i);
+//				  }
+//			  }
+//			  if (!windowBuffer.isEmpty()){
+//				  bufferMessages();
+//			  }
+ 
+//public void sendMessageFromWindow(){
+//  for(int i=0; i<windowBuffer.size();i++){
+//	  Out.sendMessage(windowBuffer.get(i));
+//	  System.out.println("**********Sent************");
+//	  int id = windowBuffer.get(i).getLabel();
+//	  System.out.println("Send message with Label: " + String.valueOf(id));
+//	  startTimer(id);
+//  }
+//}
+  
+//  public void sendBlockedMsgs(int id){
+//	  for (LabelMessage message: windowBuffer){
+//		  if (message.getLabel() == id){
+//			  Out.sendMessage(message);
+//			  startTimer(id);
+//			  blockedMessagesID.remove(new Integer(id));
+//			  System.out.println("Send blockede message with Label: " + String.valueOf(id));
+//		  }
+//	  }
+//  }
+
+
+}

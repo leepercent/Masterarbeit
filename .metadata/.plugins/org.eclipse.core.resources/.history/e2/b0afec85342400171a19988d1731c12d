@@ -1,0 +1,187 @@
+package SR_AckTimeout;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import ikr.simlib.entities.Entity;
+import ikr.simlib.events.CalendarCallback;
+import ikr.simlib.events.EventToken;
+import ikr.simlib.events.time.Duration;
+import ikr.simlib.events.time.PointInTime;
+import ikr.simlib.messages.LabelMessage;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+import ikr.simlib.statistics.sample.StdSampleStatistic;
+import ikr.simlib.events.calendar.Calendar;
+
+
+public class Sender extends Entity {
+
+	private final InputPort In;
+	private final SynchronousOutputPort Out;
+	private final InputPort FeedbackIn;
+	private final List<LabelMessage> sendWindow;
+	private EventToken timeoutEvent;
+	private final TreeMap<Integer, EventToken> map;
+	private final Map<Integer, PointInTime> meterMap;
+	private int oldestUnackedMsgID;
+	private final StdSampleStatistic statistic;
+	private int windowSize;
+
+
+	public Sender(SimNode ownNode) {
+		super(ownNode);
+
+		this.oldestUnackedMsgID = 0;
+		this.sendWindow = new ArrayList<>();
+		this.map = new TreeMap<Integer, EventToken>();
+		this.Out = new SynchronousOutputPort(this);
+		this.meterMap = new HashMap<>();
+		this.statistic = new StdSampleStatistic(ownNode.createChildNode("ServiceTime"));
+
+		this.In = new InputPort(this) {
+			@Override
+			protected void handleMessageIndication(Message msg) {
+				if (sendWindow.size() < 4) {   // check if window is full
+					bufferMessage();
+				}
+			}
+		};
+
+
+		this.FeedbackIn = new InputPort(this) {
+			@Override
+			protected void handleMessageIndication(Message msg) {
+				LabelMessage AckMsg = (LabelMessage) FeedbackIn.getMessage();
+				int id = ((LabelMessage) msg).getLabel();
+
+				if (((AckMessage) AckMsg).isAck()) {
+					if (timeoutEvent.isPending()){   // timeout has not reached
+						if (oldestUnackedMsgID < id){ 
+							if (map.containsKey(id-1)){ // duplicated ack detection
+								ackMessages(id-1);
+							}
+						}
+					}
+					if (In.isMessageAvailable()){
+						if (sendWindow.size() < 4) {   // check if window is full
+							bufferMessage();
+						}
+					}
+				}
+			}
+		};   
+
+	}
+
+
+	public void bufferMessage() {
+		LabelMessage message = (LabelMessage) In.getMessage();
+		sendWindow.add(message);
+		
+		//start statistic to count
+		PointInTime startTime = Calendar.getInstance().getSystemTime();
+		this.meterMap.put(message.getLabel(), startTime);
+
+		Calendar.getInstance().postEvent(new CalendarCallback() {
+			LabelMessage message;
+			@Override
+			public void execute() {
+				SendMessageFromBuffer(message);
+			}
+			
+			public CalendarCallback init(LabelMessage message){
+				this.message = message;
+				return this;
+			}
+		}.init(message), null, Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(0.1)));
+	}	
+
+	
+	
+	public void SendMessageFromBuffer(LabelMessage msg){
+		Out.sendMessage(msg);
+		this.map.put(msg.getLabel(), startTimer(msg.getLabel()));
+	}
+
+
+
+	public void ackMessages(int id) {
+		//update statistic
+		PointInTime finishTime = Calendar.getInstance().getSystemTime();
+		statistic.update(this.meterMap.get(id).until(finishTime).toMilliSeconds());
+		
+		//cancel event
+		EventToken event = (EventToken) this.map.get(id);
+		this.map.remove(id);
+		event.cancel(); 
+
+		// get last unacked event
+		if (map.isEmpty()){ //in case only 1 msg is in transition
+			oldestUnackedMsgID = id;
+		}else{
+			oldestUnackedMsgID = map.firstEntry().getKey();
+		}
+
+		// remove message from send window
+		Iterator<LabelMessage> it = sendWindow.iterator();
+		while (it.hasNext()) {
+			LabelMessage nextMessage = it.next();
+			if (nextMessage.getLabel() == id ) {
+				it.remove();
+			}
+		}
+	}
+
+
+	
+	public void timeOutAction(int retransmitID) {
+		for (Iterator<LabelMessage> it = sendWindow.iterator(); it.hasNext();) {
+			LabelMessage message = it.next();
+			if (message.getLabel() == retransmitID) {
+				Out.sendMessage(message);
+				this.map.put(message.getLabel(), startTimer(retransmitID));
+			}
+		}
+	}
+
+
+	public EventToken startTimer(int id){
+		return this.timeoutEvent = Calendar.getInstance().postEvent(new CalendarCallback(){
+			int id;
+			@Override
+			public void execute() {
+				timeOutAction(id);
+			}
+			
+			public CalendarCallback init(int id){
+				this.id=id;
+				return this;
+			}
+		}.init(id), null, Calendar.getInstance().getSystemTime().plus(Duration.fromMilliSeconds(1.5)));
+
+	}
+
+
+	public InputPort getInput() {
+		return this.In;
+	}
+
+
+	public InputPort getFeedbackInput(){
+		return this.FeedbackIn;
+	}
+
+
+	public OutputPort getOutput() {
+		return this.Out;
+	}
+
+}

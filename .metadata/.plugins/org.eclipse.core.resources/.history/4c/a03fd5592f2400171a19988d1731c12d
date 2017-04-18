@@ -1,0 +1,9 @@
+#set the IAT of Generator
+AckNackModel.Generator.IAT = 0.01
+
+AckTimerModel.Generator.arrivalRate = 0.1
+SR_AckTimerModel.Generator.arrivalRate = 0.1
+
+AckTimerModel.dropProbability = 0.1
+
+SR_AckTimerModel.dropProbability = 0.1

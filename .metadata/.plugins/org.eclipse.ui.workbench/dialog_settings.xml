@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="WorkbenchPreferenceDialogSettings">
+		<item value="838" key="DIALOG_X_ORIGIN"/>
+		<item value="579" key="DIALOG_Y_ORIGIN"/>
+	</section>
+	<section name="org.eclipse.ui.preferences.keysPreferencePage">
+		<item value="true" key="actionSetFilter"/>
+		<item value="true" key="uncategorizedFilter"/>
+		<item value="true" key="internalFilter"/>
+	</section>
+	<section name="org.eclipse.ui.internal.QuickAccess">
+		<item value="-1" key="dialogHeight"/>
+		<item value="-1" key="dialogWidth"/>
+		<list key="textEntries">
+		</list>
+		<list key="orderedElements">
+		</list>
+		<list key="orderedProviders">
+		</list>
+		<list key="textArray">
+		</list>
+	</section>
+	<section name="NewWizardAction">
+	</section>
+	<section name="ImportExportAction">
+		<item value="org.eclipse.jdt.internal.ui.fatjarpackager.JarPackageWizard" key="ImportExportPage.STORE_SELECTED_EXPORT_WIZARD_ID"/>
+		<item value="org.eclipse.ui.wizards.import.FileSystem" key="ImportExportPage.STORE_SELECTED_IMPORT_WIZARD_ID"/>
+		<list key="ImportExportPage.STORE_EXPANDED_IMPORT_CATEGORIES">
+			<item value="org.eclipse.ui.Basic"/>
+		</list>
+		<list key="ImportExportPage.STORE_EXPANDED_EXPORT_CATEGORIES">
+			<item value="org.eclipse.jdt.ui.Java"/>
+		</list>
+	</section>
+	<section name="ZipFileImportWizard">
+		<item value="false" key="WizardZipFileResourceImportPage1.STORE_OVERWRITE_EXISTING_RESOURCES_ID"/>
+		<list key="WizardZipFileResourceImportPage1.STORE_SOURCE_NAMES_ID">
+			<item value="/net/arch/ikr/simlib-java/ikr-simlib-example-4.0.0-src.jar"/>
+		</list>
+	</section>
+	<section name="FileSystemImportWizard">
+		<item value="false" key="WizardFileSystemResourceImportPage1.STORE_CREATE_CONTAINER_STRUCTURE_ID"/>
+		<item value="true" key="WizardFileSystemResourceImportPage1.STORE_OVERWRITE_EXISTING_RESOURCES_ID"/>
+		<list key="WizardFileSystemResourceImportPage1.STORE_SOURCE_NAMES_ID">
+			<item value="/u/home/stud/feilimth/Downloads"/>
+			<item value="/u/home/stud/feilimth/Downloads/SW_AckTimeout_Final"/>
+			<item value="/u/home/stud/feilimth/Downloads/drive-download-20170413T095043Z-001"/>
+			<item value="/u/home/stud/feilimth/Downloads/drive-download-20170412T091945Z-001"/>
+			<item value="/u/home/stud/feilimth/Downloads/drive-download-20170411T075845Z-001"/>
+			<item value="/u/home/stud/feilimth/protocol_AckTimer/Protocol_AckWithTimer"/>
+			<item value="/u/home/stud/feilimth/Desktop"/>
+			<item value="/u/home/stud/feilimth/workspace/Protocol_1/src/Protocol"/>
+			<item value="/u/home/stud/feilimth/workspace/Example2/src/protocol"/>
+			<item value="/u/home/stud/feilimth/ACK%2fNACK_Protocol"/>
+		</list>
+	</section>
+</section>

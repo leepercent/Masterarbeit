@@ -1,0 +1,12 @@
+#set the drop rate
+AckTimerModel.dropProbability = 0.1
+AckNackModel.dropProbability = 0.1
+SR_AckTimerModel.dropProbability = 0.1
+
+#set the IAT
+AckTimerModel.Generator.arrivalRate = 0.10
+AckNackModel.Generator.arrivalRate = 0.10
+SR_AckTimerModel.Generator.arrivalRate = 0.70
+
+#set message length
+AckTimerModel.Generator.msgLength = 1

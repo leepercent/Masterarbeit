@@ -1,0 +1,89 @@
+package Protocol;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import ikr.simlib.algorithms.queuingDisciplines.UnboundedFIFOQDisc;
+import ikr.simlib.distributions.continuous.ConstantDistribution;
+import ikr.simlib.entities.Entity;
+import ikr.simlib.entities.phases.StdPhase;
+import ikr.simlib.entities.queues.QueuingEntity;
+import ikr.simlib.events.time.Duration;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+
+public class Sender extends Entity {
+
+  private final InputPort generatorInput;
+  private final SynchronousOutputPort out;
+  private final InputPort FeedbackIn;
+  private final QueuingEntity queue;
+
+  private boolean waitForFeedback = false;
+  private Message message;
+  
+
+  public Sender(SimNode ownNode, QueuingEntity qe) {
+    super(ownNode);
+    
+    this.queue = qe;
+ 
+    this.out = new SynchronousOutputPort(this);
+    
+    this.generatorInput = new InputPort(this) {
+      @Override
+      protected void handleMessageIndication(Message msg) {
+        if (!waitForFeedback) {
+        	if (queue.getQDisc().isEmpty()) {
+        		message = generatorInput.getMessage();
+        		out.sendMessage(message);
+        		waitForFeedback = true;
+        	} else {
+        		message = queue.getQDisc().dequeue().getMessage();
+        		out.sendMessage(message);
+        		waitForFeedback = true;
+        	}
+        } else {
+//        	message = generatorInput.getMessage();
+//        	queue.getQDisc().handleMessage(message);
+        }
+      }
+    };
+
+    this.FeedbackIn = new InputPort(this) {
+      @Override
+      protected void handleMessageIndication(Message msg) {
+    	msg = FeedbackIn.getMessage();
+        if (((AckNackMessage) msg).isAck()) {
+          if (queue.getQDisc().isEmpty()){
+        	  waitForFeedback = false;
+          }else{
+        	  message = queue.getQDisc().dequeue().getMessage();
+        	  out.sendMessage(message);        	  
+        	  waitForFeedback = true;
+          }
+        } else {
+        	out.sendMessage(message); //retransmission
+        	waitForFeedback = true;
+        }
+      }
+    };
+       
+  }
+  
+  public InputPort getInput() {
+	  return this.generatorInput;
+  }
+  
+  public InputPort getFeedbackInput(){
+	  return this.FeedbackIn;
+  }
+  
+  public OutputPort getOutput() {
+	  return this.out;
+  }
+
+}

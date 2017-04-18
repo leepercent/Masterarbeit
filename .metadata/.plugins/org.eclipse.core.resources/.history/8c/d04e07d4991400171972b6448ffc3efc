@@ -1,0 +1,104 @@
+package Protocol_SR;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import ikr.simlib.entities.Entity;
+import ikr.simlib.messages.Message;
+import ikr.simlib.model.SimNode;
+import ikr.simlib.ports.Port;
+import ikr.simlib.ports.input.InputPort;
+import ikr.simlib.ports.output.OutputPort;
+import ikr.simlib.ports.output.SynchronousOutputPort;
+
+public class Multiplexer_Output extends Entity{
+
+	private final InputPort In;
+	protected final List<OutputPort> outputPorts;
+	protected final List<OutputPort> feedbackOutputPorts;
+	
+	public Multiplexer_Output(int noOfSender, SimNode ownNode) {
+		super(ownNode);
+		
+		this.In = new InputPort(this){
+			@Override
+			protected void handleMessageIndication(Message msg) {
+				for (int i=0; i < noOfSender; i++){
+					if (In.isMessageAvailable()){
+						outputPorts.get(i).messageIndication(msg);
+					}
+				}
+			}
+		};
+		
+		this.outputPorts = new ArrayList<OutputPort>(noOfSender);
+
+		for (int i = 0; i < noOfSender; i++) {
+			addPort(OutputPort.OUTPUT_PORT_NAME + " " + (i+1) );
+		}
+		
+	}
+	
+	public Multiplexer_Output(SimNode ownNode){
+		this(0, ownNode);
+
+	}
+
+	public void addPort(String portName) {
+		outputPorts.add(new OutputPort(this, portName){
+			
+			@Override
+			protected Message handleGetMessage() {
+				return In.getMessage();
+			}
+
+			@Override
+			protected boolean handleIsMessageAvailable() {
+				return In.isMessageAvailable();
+			}
+			
+		});
+		
+		feedbackOutputPorts.add(new OutputPort(this, portName){
+			
+			@Override
+			protected Message handleGetMessage() {
+				return In.getMessage();
+			}
+
+			@Override
+			protected boolean handleIsMessageAvailable() {
+				return In.isMessageAvailable();
+			}
+	}
+
+	public String addPort() {
+		String portName = OutputPort.OUTPUT_PORT_NAME + " " + (outputPorts.size() + 1);
+		addPort(portName);
+		return portName;
+	}
+
+	public void removePort(String portName) {
+		for (int i = 0; i < outputPorts.size(); i++) {
+			OutputPort p = outputPorts.get(i);
+
+			if (p.getLocalName().equals(portName)) {
+				outputPorts.remove(i);
+				break;
+			}
+		}
+	}
+
+	public OutputPort getOutput(int i){
+		return outputPorts.get(i-1);
+	}
+	
+	public InputPort getInput(){
+		return this.In;
+	}
+	
+	public int portSize(){
+		return outputPorts.size();
+	}
+
+}
